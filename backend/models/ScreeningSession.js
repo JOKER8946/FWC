@@ -12,17 +12,6 @@ const conversationTurnSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      // For voice mode: this is the transcript of the audio
-    },
-    audioUrl: {
-      type: String,
-      default: null,
-      // Populated only in voice mode — points to recorded audio file
-    },
-    transcript: {
-      type: String,
-      default: null,
-      // Web Speech API / Whisper transcript (voice mode only)
     },
     timestamp: {
       type: Date,
@@ -69,6 +58,34 @@ const screeningSessionSchema = new mongoose.Schema(
         enum: ['advance', 'hold', 'reject', null],
         default: null,
       },
+      summary: { type: String, default: '' },
+    },
+
+    // ── Candidate portal token (generated when HR shares interview link) ────────
+    candidateToken: {
+      type: String,
+      default: null,
+    },
+    candidateTokenExpiresAt: {
+      type: Date,
+      default: null,
+    },
+
+    // ── Proctoring (tab-switch / focus-loss events during candidate interview) ─
+    proctoring: {
+      tabSwitches:     { type: Number, default: 0 },
+      focusLostEvents: { type: Number, default: 0 },
+      flagged:         { type: Boolean, default: false },
+      events: {
+        type: [
+          {
+            type:      { type: String, enum: ['tab_switch', 'focus_lost', 'fullscreen_exit'] },
+            timestamp: { type: Date, default: Date.now },
+            _id: false,
+          },
+        ],
+        default: [],
+      },
     },
 
     // ── Workflow State ────────────────────────────────────────────────────────
@@ -97,7 +114,8 @@ const screeningSessionSchema = new mongoose.Schema(
 screeningSessionSchema.index({ resumeId: 1 }, { unique: true }); // one session per resume
 screeningSessionSchema.index({ jobId: 1 });
 screeningSessionSchema.index({ status: 1 });
-screeningSessionSchema.index({ jobId: 1, status: 1 });           // recruiter: sessions by job + state
-screeningSessionSchema.index({ 'aiAnalysis.overallVerdict': 1 }); // filter by verdict
+screeningSessionSchema.index({ jobId: 1, status: 1 });            // recruiter: sessions by job + state
+screeningSessionSchema.index({ 'aiAnalysis.overallVerdict': 1 });  // filter by verdict
+screeningSessionSchema.index({ candidateToken: 1 }, { sparse: true }); // fast token lookup; sparse skips null
 
 module.exports = mongoose.model('ScreeningSession', screeningSessionSchema);

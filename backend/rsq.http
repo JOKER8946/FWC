@@ -1,0 +1,86 @@
+@baseUrl = http://localhost:5000
+
+GET http://localhost:5000/api/employees
+Authorization: Bearer {{authToken}}
+
+
+### 1. Register User
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "john.doe@example.com",
+  "password": "Password123!",
+  "role": "employee",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+
+###
+
+### 2. Login User
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john.doe@example.com",
+  "password": "Password123!"
+}
+
+###
+
+### 3. Get Current User Profile (Me)
+# Note: Copy the actual token string returned from the login route 
+# and paste it below replacing <YOUR_TOKEN_HERE>
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMWQzZjJiZGQ2Nzc1NmFmMTMxNTM4YyIsImlhdCI6MTc4MDMwMTcyOSwiZXhwIjoxNzgwOTA2NTI5fQ.kiE4MJU67bEtc1SRVcgGC0yzkqo_L8c-zrNg60Awcv0
+
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{authToken}}
+
+###
+
+### 4. Update Password
+PUT {{baseUrl}}/api/auth/update-password
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "currentPassword": "Password123!",
+  "newPassword": "NewPassword123!"
+}
+
+###
+
+### 5. Logout User
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{authToken}}
+
+### 6. Admin Login Test
+# @name adminLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@fwchrms.com",
+  "password": "Admin@1234"
+}
+
+### 1. Health Check
+GET {{baseUrl}}/api/health
+
+###
+
+### 2. Admin Login
+# @name adminLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@fwchrms.com",
+  "password": "Admin@1234"
+}
+
+
+GET http://localhost:5000/api/employees
+Authorization: Bearer <your_token>

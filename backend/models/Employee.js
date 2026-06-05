@@ -87,7 +87,7 @@ const employeeSchema = new mongoose.Schema(
 
 // ── Indexes ───────────────────────────────────────────────────────────────────
 employeeSchema.index({ userId: 1 }, { unique: true });
-employeeSchema.index({ email: 1 }, { unique: true });
+// employeeSchema.index({ email: 1 }, { unique: true });
 employeeSchema.index({ department: 1 });
 employeeSchema.index({ status: 1 });
 employeeSchema.index({ managerId: 1 });                // fetch all direct reports

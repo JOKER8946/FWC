@@ -182,3 +182,14 @@
     border-right-color: var(--border);
   }
 }
+
+
+/* ── Dashboard shared classes — mobile ────────────────────────────────────── */
+@media (max-width: 768px) {
+  .page-title    { font-size: 18px !important; }
+  .page-subtitle { font-size: 12px !important; }
+  .section-title { font-size: 14px !important; }
+  .stat-value    { font-size: 22px !important; }
+  .stat-grid     { gap: 10px !important; }
+  .stat-card     { padding: 14px 16px !important; }
+}
