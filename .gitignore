@@ -1,6 +1,30 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Environment variables
 .env
-.env.*
-!.env.example
+backend/.env
+frontend/.env
+.env.local
+.env.*.local
+
+# Build output
+frontend/dist/
+frontend/dist-ssr/
+
+# Uploaded files (resumes, PDFs) — never commit user data
+backend/uploads/
+
+# AI memory / editor artifacts
+.claude/
+*.local
+
+# Logs
 *.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

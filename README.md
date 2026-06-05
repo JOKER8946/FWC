@@ -121,10 +121,35 @@ node backend/scripts/seedData.js
 
 ---
 
+## Deployment (Render.com)
+
+### One-time setup
+1. Push this repo to GitHub
+2. Go to [render.com](https://render.com) → New → Blueprint → connect repo
+3. Render auto-detects `render.yaml` and creates both services (backend web service + frontend static site)
+
+### Environment variables to set in the Render dashboard
+| Variable | Service | Value |
+|----------|---------|-------|
+| `MONGO_URI` | Backend | MongoDB Atlas connection string |
+| `JWT_SECRET` | Backend | Any long random string (32+ chars) |
+| `GEMINI_API_KEY` | Backend | From [ai.google.dev](https://ai.google.dev) (free tier) |
+| `CLIENT_URL` | Backend | Your frontend Render URL (e.g. `https://fwc-hrms-frontend.onrender.com`) |
+| `VITE_API_URL` | Frontend | Your backend Render URL + `/api` (e.g. `https://fwc-hrms-backend.onrender.com/api`) |
+
+### After first deploy — seed the database
+Open the backend service in Render → Shell tab, then run:
+```bash
+node scripts/resetDB.js   # creates admin + HR accounts
+node scripts/seedData.js  # adds 3 dev employees with 90 days of realistic data
+```
+
+---
+
 ## Project Structure
 
 ```
-FWC/
+fwc-hrms-v2/
 ├── backend/
 │   ├── controllers/      # Business logic per domain
 │   ├── models/           # Mongoose schemas
