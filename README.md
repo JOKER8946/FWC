@@ -124,7 +124,7 @@ node backend/scripts/seedData.js
 ## Project Structure
 
 ```
-fwc-hrms-v2/
+FWC/
 ├── backend/
 │   ├── controllers/      # Business logic per domain
 │   ├── models/           # Mongoose schemas
