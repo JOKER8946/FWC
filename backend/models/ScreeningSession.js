@@ -13,6 +13,14 @@ const conversationTurnSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    // Raw Web-Speech-API transcript for voice turns. Mirrors `message` for
+    // voice turns (the candidate's text *is* the transcript) but kept as a
+    // distinct field so future flows can diverge — e.g. typed edits to a
+    // voice transcript, or a separate STT source via Gemini.
+    transcript: {
+      type: String,
+      default: null,
+    },
     timestamp: {
       type: Date,
       default: Date.now,

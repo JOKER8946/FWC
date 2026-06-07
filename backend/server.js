@@ -7,6 +7,21 @@ const connectDB = require('./config/db');
 
 const authRoutes = require('./routes/authRoutes');
 
+// ── Env sanity check ──────────────────────────────────────────────────────────
+// In production, refuse to boot with a placeholder CLIENT_URL — the candidate
+// interview link is built from this value, and a wrong one silently sends
+// candidates to a broken page. Dev / test are allowed to fall back to localhost.
+if (process.env.NODE_ENV === 'production') {
+  const clientUrl = process.env.CLIENT_URL || '';
+  const looksLocal = !clientUrl || /localhost|127\.0\.0\.1/.test(clientUrl);
+  if (looksLocal) {
+    console.error('\n[FATAL] NODE_ENV=production but CLIENT_URL is not set or points to localhost.');
+    console.error('        Set CLIENT_URL to your deployed frontend origin, e.g.:');
+    console.error('        CLIENT_URL=https://fwc-hrms-frontend.onrender.com\n');
+    process.exit(1);
+  }
+}
+
 connectDB();
 
 const app = express();

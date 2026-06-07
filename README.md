@@ -134,7 +134,7 @@ node backend/scripts/seedData.js
 | `MONGO_URI` | Backend | MongoDB Atlas connection string |
 | `JWT_SECRET` | Backend | Any long random string (32+ chars) |
 | `GEMINI_API_KEY` | Backend | From [ai.google.dev](https://ai.google.dev) (free tier) |
-| `CLIENT_URL` | Backend | Your frontend Render URL (e.g. `https://fwc-hrms-frontend.onrender.com`) |
+| `CLIENT_URL` | Backend | Your frontend Render URL (e.g. `https://fwc-hrms-frontend.onrender.com`). **Required in production** — the server refuses to start without it. The candidate interview link is built on the *frontend* from `window.location.origin`, so this value only affects CORS and the optional server-composed fallback URL. |
 | `VITE_API_URL` | Frontend | Your backend Render URL + `/api` (e.g. `https://fwc-hrms-backend.onrender.com/api`) |
 
 ### After first deploy — seed the database
@@ -279,6 +279,12 @@ graph TD
 | POST | `/:id/end` | End session + trigger analysis | Admin, HR |
 
 ### Candidate Portal (token-gated, no JWT) — `/api/screening/candidate`
+
+> **Note on interview links:** `POST /api/screening/:id/generate-link` returns
+> `{ interviewPath, token, interviewUrl, expiresAt }`. The frontend builds
+> the shareable link as `${window.location.origin}${interviewPath}`, so the
+> link always points at the host the HR user is actually on — localhost in
+> dev, the production domain in prod — with no env-var coordination needed.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|

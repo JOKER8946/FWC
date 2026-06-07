@@ -46,7 +46,27 @@ const findSessionByToken = async (token) => {
 // @desc    Generate a shareable candidate interview link (authenticated — HR only)
 // @route   POST /api/screening/:id/generate-link
 // @access  Admin, HR Recruiter
+//
+// We return the *path* and *token* separately rather than a fully-qualified
+// URL. The candidate's browser already knows what origin it loaded the HR
+// dashboard from, so the frontend composes the final link using
+// `${window.location.origin}/interview/${token}`. This works on localhost,
+// staging, prod, and preview deploys without any env-var coordination.
 // ─────────────────────────────────────────────────────────────────────────────
+const buildInterviewLinkPayload = (token, expiresAt, alreadyGenerated = false) => ({
+  // Relative path the frontend can prefix with its own origin.
+  interviewPath: `/interview/${token}`,
+  // Token alone — useful for callers that want to embed it in emails / QR codes.
+  token,
+  // Pre-composed for convenience. This is what the API used to return; the
+  // frontend still builds its own from `window.location.origin` to dodge the
+  // localhost bug, but the field is kept so any third-party consumer doesn't
+  // break. The frontend will overwrite it on receipt.
+  interviewUrl: `${process.env.CLIENT_URL || ''}/interview/${token}`,
+  expiresAt,
+  alreadyGenerated,
+});
+
 const generateCandidateLink = async (req, res) => {
   try {
     const session = await ScreeningSession.findById(req.params.id);
@@ -58,10 +78,9 @@ const generateCandidateLink = async (req, res) => {
 
     // Idempotent — return existing valid token
     if (session.candidateToken && new Date() < new Date(session.candidateTokenExpiresAt)) {
-      const interviewUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/interview/${session.candidateToken}`;
       return res.status(200).json({
         success: true,
-        data: { interviewUrl, expiresAt: session.candidateTokenExpiresAt, alreadyGenerated: true },
+        data: buildInterviewLinkPayload(session.candidateToken, session.candidateTokenExpiresAt, true),
       });
     }
 
@@ -72,8 +91,10 @@ const generateCandidateLink = async (req, res) => {
     session.candidateTokenExpiresAt = expiry;
     await session.save();
 
-    const interviewUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/interview/${token}`;
-    res.status(200).json({ success: true, data: { interviewUrl, expiresAt: expiry } });
+    res.status(200).json({
+      success: true,
+      data: buildInterviewLinkPayload(token, expiry, false),
+    });
   } catch (err) {
     console.error('generateCandidateLink error:', err);
     res.status(500).json({ success: false, message: err.message });
@@ -133,7 +154,7 @@ const getCandidateSession = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const candidateSendMessage = async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, transcript } = req.body;
     if (!message?.trim()) return res.status(400).json({ success: false, message: 'Message is required.' });
 
     const { error, message: errMsg, session } = await findSessionByToken(req.params.token);
@@ -145,10 +166,13 @@ const candidateSendMessage = async (req, res) => {
 
     const job = await Job.findById(session.jobId);
 
-    // 1. Add candidate message
+    // 1. Add candidate message. `transcript` is the raw Web-Speech-API output
+    //    for voice turns; we persist it alongside `message` for the analysis
+    //    stage and HR review. For text turns it's null.
     session.conversationHistory.push({
       role: 'candidate',
       message: message.trim(),
+      transcript: transcript?.trim() || null,
       timestamp: new Date(),
     });
 

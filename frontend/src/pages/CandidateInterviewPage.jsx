@@ -6,6 +6,8 @@ import {
   candidateEndSession,
   recordProctoringEvent,
 } from '../api/candidate';
+import useSpeechRecognition from '../hooks/useSpeechRecognition';
+import useSpeechSynthesis   from '../hooks/useSpeechSynthesis';
 import './CandidateInterviewPage.css';
 
 const MAX_TURNS = 8;
@@ -62,7 +64,10 @@ function ChatMessage({ turn }) {
     <div className={`cip-message ${isAI ? 'ai' : 'candidate'}`}>
       <div className="cip-avatar">{isAI ? '🤖' : '👤'}</div>
       <div className="cip-bubble">
-        <div className="cip-msg-role">{isAI ? 'Interviewer' : 'You'}</div>
+        <div className="cip-msg-role">
+          {isAI ? 'Interviewer' : 'You'}
+          {!isAI && turn.isVoice && <span className="cip-voice-badge" title="Voice transcript">🎙</span>}
+        </div>
         <div className="cip-msg-text">{turn.message}</div>
         {time && <div className="cip-msg-time">{time}</div>}
       </div>
@@ -87,8 +92,32 @@ export default function CandidateInterviewPage() {
   const [inputText, setInputText] = useState('');
   const [sending,   setSending]   = useState(false);
 
+  // ── Input mode (text vs voice) + TTS ─────────────────────────────────────
+  // Default to text — it's universal and the safer starting point. Candidates
+  // can flip to voice any time during the interview.
+  const [inputMode,  setInputMode]  = useState('text');
+  const [ttsEnabled, setTtsEnabled] = useState(true);
+
+  // Stop the browser's speechSynthesis when the user starts typing a new turn
+  // mid-reply, so the AI question never talks over the candidate.
+  const tts = useSpeechSynthesis({ lang: 'en-US' });
+  useEffect(() => () => tts.cancel(), [tts.cancel]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-speak AI replies when TTS is enabled. The most-recent message from the
+  // AI is tracked so re-renders for unrelated state don't replay the prompt.
+  const lastSpokenAiId = useRef(null);
+  useEffect(() => {
+    if (!ttsEnabled || !tts.supported) return;
+    const lastAi = [...history].reverse().find(t => t.role === 'ai');
+    if (!lastAi) return;
+    const id = `${lastAi.timestamp}-${lastAi.message.slice(0, 24)}`;
+    if (lastSpokenAiId.current === id) return;
+    lastSpokenAiId.current = id;
+    tts.speak(lastAi.message);
+  }, [history, ttsEnabled, tts.supported, tts.speak]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Proctoring
-  const [proctoring,    setProctoring]    = useState({ tabSwitches: 0, focusLostEvents: 0, flagged: false });
+  const [, setProctoring]            = useState({ tabSwitches: 0, focusLostEvents: 0, flagged: false });
   const [bannerVisible, setBannerVisible] = useState(false);
   const [bannerMessage, setBannerMessage] = useState('');
   const [flagModalOpen, setFlagModalOpen] = useState(false);
@@ -161,17 +190,24 @@ export default function CandidateInterviewPage() {
   }, [session, completed, fireProctoring]);
 
   // ── Send message ─────────────────────────────────────────────────────────────
-  const handleSend = async () => {
-    const msg = inputText.trim();
+  // Shared by both text and voice paths. `isVoice` + `transcript` are attached
+  // to the optimistic turn so the chat bubble shows the voice transcript in
+  // the candidate's bubble, and so the backend can persist the transcript.
+  const sendCandidateMessage = async (msg, { transcript, isVoice } = {}) => {
     if (!msg || sending) return;
-    setInputText('');
     setSending(true);
 
-    const optimistic = { role: 'candidate', message: msg, timestamp: new Date() };
+    const optimistic = {
+      role: 'candidate',
+      message: msg,
+      transcript: transcript || null,
+      isVoice: Boolean(isVoice),
+      timestamp: new Date(),
+    };
     setHistory(prev => [...prev, optimistic]);
 
     try {
-      const res  = await candidateSendMessage(token, { message: msg });
+      const res  = await candidateSendMessage(token, { message: msg, transcript });
       const data = res.data.data;
       setHistory(prev => [...prev, { role: 'ai', message: data.aiMessage, timestamp: new Date() }]);
       if (data.isLastTurn || data.status === 'completed') {
@@ -179,12 +215,53 @@ export default function CandidateInterviewPage() {
         setCompleted(true);
       }
     } catch {
+      // Roll back the optimistic bubble and, for text mode, restore the draft.
       setHistory(prev => prev.filter(t => t !== optimistic));
-      setInputText(msg);
+      if (!isVoice) setInputText(msg);
     } finally {
       setSending(false);
     }
   };
+
+  const handleSend = () => {
+    const msg = inputText.trim();
+    if (!msg) return;
+    setInputText('');
+    sendCandidateMessage(msg, { transcript: null, isVoice: false });
+  };
+
+  // Stable callback for STT final transcripts. Sends the captured text as the
+  // candidate's answer with a `transcript` field attached for the backend.
+  const handleVoiceFinal = useCallback((text) => {
+    if (!text || sending) return;
+    sendCandidateMessage(text, { transcript: text, isVoice: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sending]);
+
+  const stt = useSpeechRecognition({
+    lang: 'en-US',
+    continuous: false,
+    interimResults: true,
+    onFinal: handleVoiceFinal,
+  });
+
+  // Surface a one-time notice when the browser can't do STT. Derived directly
+  // from props/state — no useState/useEffect needed.
+  const sttNotice =
+    inputMode === 'voice' && !stt.supported
+      ? 'Voice input is only supported in Chrome, Edge, and Opera. Please switch to Text mode, or use a Chromium browser.'
+      : null;
+
+  const toggleMic = useCallback(() => {
+    if (!stt.supported) return;
+    if (stt.listening) {
+      stt.stop();
+    } else {
+      // If a question is being read aloud, cut it off so the candidate can speak.
+      tts.cancel();
+      stt.start();
+    }
+  }, [stt, tts]);
 
   const handleEnd = async () => {
     if (!window.confirm('End the interview early? Your responses so far will be analysed and submitted.')) return;
@@ -277,18 +354,95 @@ export default function CandidateInterviewPage() {
 
         <div className="cip-input-area">
 
-          <div className="cip-text-row">
-            <textarea
-              className="cip-textarea"
-              rows={2}
-              placeholder="Type your answer here… (Enter to send, Shift+Enter for new line)"
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-              disabled={sending}
-            />
-            <button className="cip-send-btn" onClick={handleSend} disabled={sending || !inputText.trim()}>↑</button>
+          <div className="cip-input-toolbar">
+            <div className="cip-mode-toggle" role="tablist" aria-label="Answer input mode">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={inputMode === 'text'}
+                className={`cip-mode-btn ${inputMode === 'text' ? 'active' : ''}`}
+                onClick={() => { setInputMode('text'); if (stt.listening) stt.stop(); tts.cancel(); }}
+                disabled={sending}
+              >
+                <span className="cip-mode-icon">⌨</span> Text
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={inputMode === 'voice'}
+                className={`cip-mode-btn ${inputMode === 'voice' ? 'active' : ''}`}
+                onClick={() => setInputMode('voice')}
+                disabled={sending}
+              >
+                <span className="cip-mode-icon">🎙</span> Voice
+              </button>
+            </div>
+
+            {tts.supported && (
+              <label className="cip-tts-toggle" title="Read AI questions aloud">
+                <input
+                  type="checkbox"
+                  checked={ttsEnabled}
+                  onChange={e => {
+                    const on = e.target.checked;
+                    setTtsEnabled(on);
+                    if (!on) tts.cancel();
+                  }}
+                />
+                <span className="cip-tts-track"><span className="cip-tts-thumb" /></span>
+                <span className="cip-tts-label">🔊 Read aloud</span>
+              </label>
+            )}
           </div>
+
+          {inputMode === 'text' ? (
+            <div className="cip-text-row">
+              <textarea
+                className="cip-textarea"
+                rows={2}
+                placeholder="Type your answer here… (Enter to send, Shift+Enter for new line)"
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                disabled={sending}
+              />
+              <button className="cip-send-btn" onClick={handleSend} disabled={sending || !inputText.trim()}>↑</button>
+            </div>
+          ) : (
+            <div className={`cip-voice-panel ${stt.listening ? 'listening' : ''}`}>
+              {sttNotice && (
+                <div className="cip-voice-notice" role="alert">⚠ {sttNotice}</div>
+              )}
+
+              <div className="cip-voice-transcript">
+                {stt.interim || stt.transcript || (stt.listening ? 'Listening… speak your answer.' : 'Tap the mic to start speaking.')}
+              </div>
+
+              <div className="cip-voice-controls">
+                <button
+                  type="button"
+                  className={`cip-mic-btn ${stt.listening ? 'on' : ''}`}
+                  onClick={toggleMic}
+                  disabled={!stt.supported || sending}
+                  aria-label={stt.listening ? 'Stop recording' : 'Start recording'}
+                  title={!stt.supported ? 'Voice input requires Chrome, Edge, or Opera' : (stt.listening ? 'Tap to send' : 'Tap to speak')}
+                >
+                  {stt.listening ? (
+                    <span className="cip-mic-icon">⏹</span>
+                  ) : (
+                    <span className="cip-mic-icon">🎙</span>
+                  )}
+                  <span className="cip-mic-pulse" />
+                </button>
+
+                <div className="cip-voice-hint">
+                  {stt.listening
+                    ? 'Listening — your answer will be sent automatically when you pause.'
+                    : 'Press the mic, then speak your answer.'}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="cip-end-row">
             <button className="cip-end-link" onClick={handleEnd} disabled={sending}>End interview early</button>

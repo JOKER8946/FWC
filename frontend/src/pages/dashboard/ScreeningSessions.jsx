@@ -84,7 +84,7 @@ function StartSessionModal({ onClose, onCreated }) {
       const res = await api.get('/resumes/jobs');
       setJobs(res.data.data || []);
       setJobsLoaded(true);
-    } catch {}
+    } catch { /* non-critical: leave the previous list in place */ }
   };
 
   const loadResumes = async (jobId) => {
@@ -93,7 +93,7 @@ function StartSessionModal({ onClose, onCreated }) {
       const { default: api } = await import('../../api/axios');
       const res = await api.get('/resumes', { params: { jobId, status: 'shortlisted' } });
       setResumes(res.data.data || []);
-    } catch {}
+    } catch { /* non-critical: leave the previous list in place */ }
   };
 
   const handleJobChange = (e) => {
@@ -185,11 +185,23 @@ function SessionDetailPanel({ session, onClose, onLinkGenerated }) {
     setLinkError('');
     try {
       const res = await generateCandidateLink(session._id);
-      const url  = res.data.data.interviewUrl;
+      const { interviewPath, interviewUrl, token } = res.data.data;
+
+      // Build the share URL on the *frontend* so it always matches the
+      // candidate's browser origin (works on localhost, staging, prod, and
+      // preview deploys without env-var coordination). Fall back to the
+      // server-provided URL only if the path is missing.
+      const url = interviewPath
+        ? `${window.location.origin}${interviewPath}`
+        : interviewUrl;
+      if (!url) throw new Error('Server did not return a usable interview link.');
+
+      // Keep the raw token around in case a future caller wants to embed it
+      // in a QR code or email template.
       setLinkUrl(url);
-      if (onLinkGenerated) onLinkGenerated(session._id, url);
+      if (onLinkGenerated) onLinkGenerated(session._id, url, token);
     } catch (err) {
-      setLinkError(err.response?.data?.message || 'Failed to generate link. Please try again.');
+      setLinkError(err.response?.data?.message || err.message || 'Failed to generate link. Please try again.');
     } finally { setGenLoading(false); }
   };
 
