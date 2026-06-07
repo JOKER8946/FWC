@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from './DashboardLayout';
+import MoneyAmount from '../../components/MoneyAmount';
 import ResumeScreener from './ResumeScreener';
 import HRBot from './HRBot';
 import ScreeningSessionsPage from './ScreeningSessions';
@@ -344,7 +345,6 @@ function EmployeeOverview() {
   });
 
   const fmt = (n) => n != null ? n : '—';
-  const fmtCurrency = (n) => n != null ? `₹${Number(n).toLocaleString('en-IN')}` : '—';
 
   return (
     <div className="page-fade-in">
@@ -354,12 +354,12 @@ function EmployeeOverview() {
         {[
           { label: 'Days Present',      value: fmt(myStats?.daysPresent),     sub: 'This month' },
           { label: 'Pending Leaves',    value: fmt(myStats?.pendingLeaves),   sub: 'Awaiting approval' },
-          { label: 'Last Net Pay',      value: fmtCurrency(myStats?.lastNetPay), sub: myStats?.lastPayMonth || 'No payslip yet' },
+          { label: 'Last Net Pay',      valueNode: <MoneyAmount value={myStats?.lastNetPay} scope="global" key="my-workspace" />, sub: myStats?.lastPayMonth || 'No payslip yet' },
           { label: 'Performance Score', value: myStats?.performanceScore != null ? `${myStats.performanceScore}/100` : '—', sub: myStats?.reviewPeriod || 'No review yet' },
-        ].map(({ label, value, sub }) => (
+        ].map(({ label, value, valueNode, sub }) => (
           <div className="stat-card" key={label}>
             <div className="stat-label">{label}</div>
-            <div className="stat-value">{value}</div>
+            <div className="stat-value">{valueNode ?? value}</div>
             <div className="stat-sub">{sub}</div>
           </div>
         ))}

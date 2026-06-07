@@ -50,6 +50,83 @@ const StatusBadge = ({ status }) => {
   return <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: `${s.color}18`, color: s.color, textTransform: 'capitalize' }}>{s.label}</span>;
 };
 
+// ── N8N Roadmap Modal ─────────────────────────────────────────────────────────
+// Placeholder popup that signals the planned n8n integration. It does not
+// perform any n8n I/O today — it simply tells HR what's coming in the next
+// release so the AI screening flow feels like part of a larger automation
+// pipeline rather than a standalone scoring step.
+const N8N_DISMISSED_KEY = 'fwc.n8nRoadmapDismissedAt';
+// Show the popup again after this many days once the user has dismissed it.
+const N8N_REDISPLAY_DAYS = 14;
+
+const N8N_WORKFLOWS = [
+  {
+    icon: '📥',
+    title: 'Resume Inbox Automation',
+    body: 'New resume emails to careers@yourcompany.com will be auto-ingested, screened, and ranked — no manual upload step.',
+  },
+  {
+    icon: '🤖',
+    title: 'Auto-Shortlist Webhook',
+    body: 'High-confidence matches (≥ 80% score) will be auto-shortlisted and a personalized rejection email sent to the rest, all routed through n8n.',
+  },
+  {
+    icon: '📅',
+    title: 'Interview Scheduling',
+    body: 'Shortlisted candidates will receive a Calendly link via email; confirmed slots will fire the existing AI interview workflow automatically.',
+  },
+  {
+    icon: '📊',
+    title: 'Slack / Teams Alerts',
+    body: 'Hiring managers will get a real-time digest of new strong-hires in their team channel — powered by n8n → Slack/Teams connectors.',
+  },
+];
+
+function N8NRoadmapModal({ onClose }) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card n8n-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <div>
+            <h2 className="modal-title">
+              <span className="n8n-modal-badge">Coming soon</span>
+              n8n Automation Pipelines
+            </h2>
+            <p className="n8n-modal-sub">
+              Resume screening will plug into n8n workflows so HR doesn't have to babysit the inbox.
+            </p>
+          </div>
+          <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+
+        <ul className="n8n-roadmap-list">
+          {N8N_WORKFLOWS.map((w, i) => (
+            <li key={i} className="n8n-roadmap-item">
+              <span className="n8n-roadmap-icon">{w.icon}</span>
+              <div>
+                <div className="n8n-roadmap-title">{w.title}</div>
+                <div className="n8n-roadmap-body">{w.body}</div>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <div className="n8n-modal-footer">
+          <a
+            className="n8n-learn-link"
+            href="https://n8n.io"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Learn more about n8n ↗
+          </a>
+          <button className="btn-primary" onClick={onClose}>Got it</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Create Job Modal ──────────────────────────────────────────────────────────
 function CreateJobModal({ onClose, onCreated }) {
   const [form, setForm] = useState({ title: '', department: '', description: '', requirements: '' });
@@ -202,6 +279,22 @@ export default function ResumeScreener() {
   const [uploadError, setUploadError]   = useState('');
   const [showJobModal, setShowJobModal] = useState(false);
   const [dragOver, setDragOver]         = useState(false);
+  // Auto-open the n8n roadmap popup on the user's *first* visit (or once the
+  // dismiss window has expired). Initialised lazily from localStorage so we
+  // don't trigger a cascading render via useEffect.
+  const [showN8NModal, setShowN8NModal] = useState(() => {
+    const raw = localStorage.getItem(N8N_DISMISSED_KEY);
+    if (!raw) return true;
+    const dismissedAt = Number(raw);
+    if (!Number.isFinite(dismissedAt)) return true;
+    const ageDays = (Date.now() - dismissedAt) / (1000 * 60 * 60 * 24);
+    return ageDays >= N8N_REDISPLAY_DAYS;
+  });
+
+  const dismissN8N = () => {
+    localStorage.setItem(N8N_DISMISSED_KEY, String(Date.now()));
+    setShowN8NModal(false);
+  };
 
   const { data: jobsData } = useQuery({
     queryKey: ['screener-jobs'],
@@ -256,7 +349,17 @@ export default function ResumeScreener() {
         <div className="screener-topbar">
           <div>
             <h1 className="page-title">Resume Screener</h1>
-            <p className="page-subtitle">AI-powered blind scoring via keyword RAG + Gemini</p>
+            <p className="page-subtitle">
+              AI-powered blind scoring via keyword RAG + Gemini
+              <button
+                type="button"
+                className="n8n-trigger-link"
+                onClick={() => setShowN8NModal(true)}
+                title="See what's coming in the next release"
+              >
+                🛈 What's coming?
+              </button>
+            </p>
           </div>
           <button className="btn-primary" onClick={() => setShowJobModal(true)}>+ New Job</button>
         </div>
@@ -378,6 +481,10 @@ export default function ResumeScreener() {
           onClose={() => setShowJobModal(false)}
           onCreated={() => { setShowJobModal(false); qc.invalidateQueries(['screener-jobs']); }}
         />
+      )}
+
+      {showN8NModal && (
+        <N8NRoadmapModal onClose={dismissN8N} />
       )}
     </div>
   );

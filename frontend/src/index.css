@@ -28,3 +28,523 @@ input, textarea, select { font-family: inherit; }
 
 /* Remove Vite default styles */
 a { text-decoration: none; color: inherit; }
+
+/* ── MoneyAmount: eye toggle for any displayed ₹/salary value ───────────── */
+.money-amount {
+  /* Inline-flex wrapper so the toggle sits flush with the number */
+  white-space: nowrap;
+}
+
+.money-amount-value {
+  /* tabular numerals keep the row from reflowing on toggle */
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.money-amount-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: rgba(99,102,241,0.22);
+  border: 1.5px solid rgba(99,102,241,0.55);
+  border-radius: 7px;
+  cursor: pointer;
+  color: #c7d2fe;                /* bright indigo so the icon pops */
+  line-height: 0;                /* kill inline-button leading */
+  transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.08s, box-shadow 0.12s;
+  flex-shrink: 0;
+  user-select: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.money-amount-toggle svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;          /* SVG inherits text color */
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
+}
+.money-amount-toggle:hover {
+  background: rgba(99,102,241,0.38);
+  border-color: rgba(99,102,241,0.85);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(99,102,241,0.35);
+}
+.money-amount-toggle:active { transform: scale(0.92); }
+.money-amount-toggle:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+/* Revealed (currently showing the value) — green to signal "open" state */
+.money-amount-toggle.revealed {
+  background: rgba(16,185,129,0.22);
+  border-color: rgba(16,185,129,0.6);
+  color: #6ee7b7;
+}
+.money-amount-toggle.revealed:hover {
+  background: rgba(16,185,129,0.4);
+  border-color: rgba(16,185,129,0.9);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(16,185,129,0.4);
+}
+
+/* ── Attendance Calendar (full month grid) ─────────────────────────────────── */
+.atc-root {
+  background: #0e0e1a;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 20px 22px;
+  color: #e2e8f0;
+}
+
+.atc-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.atc-toolbar-left, .atc-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.atc-month-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 180px;
+  text-align: center;
+}
+.atc-nav-btn {
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-size: 18px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, border-color 0.12s, transform 0.08s;
+  font-family: inherit;
+  line-height: 1;
+}
+.atc-nav-btn:hover { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.5); color: #fff; }
+.atc-nav-btn:active { transform: scale(0.94); }
+.atc-today-btn {
+  padding: 7px 14px;
+  background: rgba(99,102,241,0.18);
+  border: 1px solid rgba(99,102,241,0.4);
+  border-radius: 8px;
+  color: #a5b4fc;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+.atc-today-btn:hover { background: rgba(99,102,241,0.32); }
+.atc-picker {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 7px;
+  color: #cbd5e1;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+}
+.atc-picker:focus { border-color: rgba(99,102,241,0.5); }
+
+/* Summary chips */
+.atc-summary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.atc-chip {
+  border-radius: 10px;
+  padding: 7px 12px;
+  text-align: center;
+  min-width: 64px;
+}
+.atc-chip-val { font-size: 17px; font-weight: 800; line-height: 1.1; }
+.atc-chip-lbl { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+/* Weekday header row */
+.atc-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.atc-weekday {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #555570;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  text-align: center;
+  padding: 4px 0;
+}
+
+/* Day grid */
+.atc-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.atc-cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  min-height: 60px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 8px;
+  padding: 5px 6px;
+  color: #cbd5e1;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, transform 0.06s;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
+}
+.atc-cell:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.15);
+}
+.atc-cell:active { transform: scale(0.97); }
+.atc-cell-blank {
+  background: transparent;
+  border: 1px dashed rgba(255,255,255,0.04);
+  cursor: default;
+  pointer-events: none;
+}
+
+.atc-cell-day {
+  font-size: 11px;
+  font-weight: 600;
+  color: inherit;
+  line-height: 1;
+}
+
+.atc-cell-status {
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 3px;
+}
+
+.atc-cell-dots {
+  display: flex;
+  gap: 3px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+.atc-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  display: inline-block;
+}
+
+/* ── Marked days: Sunday + every public holiday share the same treatment ── */
+/* Vibrant gradient + diagonal pattern + soft glow + circular day badge +   */
+/* corner pill. Each variant (sunday / national / religious / regional) has  */
+/* its own color trio so they're visually related but distinguishable.        */
+
+/* Shared base — the gradient + glow + corner-pill treatment */
+.atc-cell-marked {
+  position: relative; /* (re-affirmed for the pill absolute positioning) */
+}
+.atc-cell-marked .atc-cell-day-wrap {
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 50%;
+  width: 22px; height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Pill that sits in the top-right corner of every marked cell. The text +
+   color come from the variant modifier (.atc-mark-sun, .atc-mark-national,
+   .atc-mark-religious, .atc-mark-regional). */
+.atc-cell-mark-pill {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 1px 6px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #fff;
+  border-radius: 99px;
+  text-transform: uppercase;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+  z-index: 2;
+}
+
+/* The redundant "absent" red corner-dot is suppressed on every marked day —
+   the pill already labels the day, so the dot just adds noise. */
+.atc-cell-marked.atc-absent::after { display: none; }
+
+/* On marked days we also hide the small "PRE/LATE/WFH" status text to
+   reduce visual noise — the day is unambiguously non-working. */
+.atc-cell-marked .atc-cell-status { display: none; }
+
+/* ── Sunday (purple/violet) ── */
+.atc-cell.atc-mark-sun {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0, transparent 8px,
+      rgba(168,85,247,0.05) 8px, rgba(168,85,247,0.05) 9px
+    ),
+    linear-gradient(135deg, rgba(168,85,247,0.18), rgba(99,102,241,0.22));
+  border-color: rgba(168,85,247,0.55);
+  color: #e9d5ff;
+  box-shadow: 0 0 0 1px rgba(168,85,247,0.1), 0 4px 14px rgba(168,85,247,0.12);
+}
+.atc-cell.atc-mark-sun:hover {
+  border-color: rgba(168,85,247,0.85);
+  box-shadow: 0 0 0 1px rgba(168,85,247,0.2), 0 6px 18px rgba(168,85,247,0.2);
+}
+.atc-cell.atc-mark-sun .atc-cell-mark-pill {
+  background: linear-gradient(135deg, #a855f7, #6366f1);
+}
+
+/* ── National holiday (red) ── */
+.atc-cell.atc-mark-national {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0, transparent 8px,
+      rgba(239,68,68,0.05) 8px, rgba(239,68,68,0.05) 9px
+    ),
+    linear-gradient(135deg, rgba(239,68,68,0.20), rgba(220,38,38,0.18));
+  border-color: rgba(239,68,68,0.55);
+  color: #fecaca;
+  box-shadow: 0 0 0 1px rgba(239,68,68,0.1), 0 4px 14px rgba(239,68,68,0.12);
+}
+.atc-cell.atc-mark-national:hover {
+  border-color: rgba(239,68,68,0.85);
+  box-shadow: 0 0 0 1px rgba(239,68,68,0.2), 0 6px 18px rgba(239,68,68,0.2);
+}
+.atc-cell.atc-mark-national .atc-cell-mark-pill {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+}
+
+/* ── Religious holiday (purple, slightly different gradient so it doesn't
+   look identical to Sunday) ── */
+.atc-cell.atc-mark-religious {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0, transparent 8px,
+      rgba(167,139,250,0.05) 8px, rgba(167,139,250,0.05) 9px
+    ),
+    linear-gradient(135deg, rgba(167,139,250,0.20), rgba(124,58,237,0.20));
+  border-color: rgba(167,139,250,0.6);
+  color: #e9d5ff;
+  box-shadow: 0 0 0 1px rgba(167,139,250,0.1), 0 4px 14px rgba(167,139,250,0.12);
+}
+.atc-cell.atc-mark-religious:hover {
+  border-color: rgba(167,139,250,0.9);
+  box-shadow: 0 0 0 1px rgba(167,139,250,0.2), 0 6px 18px rgba(167,139,250,0.2);
+}
+.atc-cell.atc-mark-religious .atc-cell-mark-pill {
+  background: linear-gradient(135deg, #a78bfa, #6d28d9);
+}
+
+/* ── Regional holiday (amber/orange) ── */
+.atc-cell.atc-mark-regional {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0, transparent 8px,
+      rgba(245,158,11,0.05) 8px, rgba(245,158,11,0.05) 9px
+    ),
+    linear-gradient(135deg, rgba(245,158,11,0.20), rgba(217,119,6,0.20));
+  border-color: rgba(245,158,11,0.6);
+  color: #fde68a;
+  box-shadow: 0 0 0 1px rgba(245,158,11,0.1), 0 4px 14px rgba(245,158,11,0.12);
+}
+.atc-cell.atc-mark-regional:hover {
+  border-color: rgba(245,158,11,0.9);
+  box-shadow: 0 0 0 1px rgba(245,158,11,0.2), 0 6px 18px rgba(245,158,11,0.2);
+}
+.atc-cell.atc-mark-regional .atc-cell-mark-pill {
+  background: linear-gradient(135deg, #f59e0b, #b45309);
+}
+
+/* Event-only day (no holiday, no Sunday) — kept subtle: a small dot only */
+.atc-cell.atc-event { /* handled by the atc-dot in the cell */ }
+.atc-cell.atc-absent::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  opacity: 0.5;
+}
+.atc-cell.atc-has-status {
+  border-color: var(--cell-color);
+  background: color-mix(in srgb, var(--cell-color) 12%, transparent);
+}
+
+/* Today ring */
+.atc-today-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid #6366f1;
+  border-radius: 8px;
+  pointer-events: none;
+}
+.atc-cell.atc-today .atc-cell-day {
+  color: #a5b4fc;
+}
+
+.atc-cell.atc-selected {
+  border-color: #fff;
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.5);
+}
+
+/* Legend */
+.atc-legend {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  font-size: 11.5px;
+  color: #9090b0;
+}
+.atc-legend-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.atc-legend-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #555570;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-right: 4px;
+}
+.atc-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.atc-legend-swatch {
+  width: 10px; height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.atc-legend-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Detail popup */
+.atc-detail {
+  margin-top: 16px;
+  padding: 16px 18px;
+  background: rgba(99,102,241,0.04);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 12px;
+}
+.atc-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.atc-detail-date {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+.atc-detail-meta {
+  font-size: 12px;
+  color: #9090b0;
+  margin-top: 3px;
+}
+.atc-detail-close {
+  background: none; border: none; color: #7070a0; font-size: 18px;
+  cursor: pointer; padding: 0; line-height: 1;
+}
+.atc-detail-close:hover { color: #e2e8f0; }
+
+.atc-detail-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  font-size: 12.5px;
+  margin-bottom: 6px;
+}
+.atc-detail-key { color: #555570; }
+.atc-detail-val { color: #e2e8f0; font-weight: 600; }
+.atc-detail-empty { color: #ef4444; font-size: 12.5px; }
+
+.atc-detail-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.atc-detail-section-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 4px;
+}
+.atc-detail-section-body {
+  font-size: 12.5px;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.atc-detail-tag {
+  display: inline-block;
+  padding: 1px 7px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  border-radius: 99px;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .atc-cell { min-height: 48px; padding: 3px 4px; }
+  .atc-cell-day { font-size: 10px; }
+  .atc-cell-status { font-size: 8px; }
+  .atc-month-label { font-size: 17px; min-width: 140px; }
+}

@@ -238,6 +238,109 @@
   font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer;
 }
 
+/* ── N8N Roadmap Modal ─────────────────────────────────────────────────────── */
+.n8n-modal { max-width: 580px; }
+
+.n8n-modal-badge {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #f59e0b;
+  background: rgba(245,158,11,0.12);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 99px;
+  vertical-align: middle;
+}
+
+.n8n-modal-sub {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: #9090b0;
+  line-height: 1.5;
+  max-width: 460px;
+}
+
+.n8n-roadmap-list {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.n8n-roadmap-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  align-items: flex-start;
+}
+
+.n8n-roadmap-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.n8n-roadmap-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #e0e0f0;
+  margin-bottom: 2px;
+}
+
+.n8n-roadmap-body {
+  font-size: 12.5px;
+  color: #9090b0;
+  line-height: 1.55;
+}
+
+.n8n-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.n8n-learn-link {
+  font-size: 12.5px;
+  color: #6366f1;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.n8n-learn-link:hover { color: #8b5cf6; text-decoration: underline; }
+
+/* Inline "what's coming?" trigger link next to the page subtitle */
+.n8n-trigger-link {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 10px;
+  padding: 3px 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #f59e0b;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 99px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  vertical-align: middle;
+}
+.n8n-trigger-link:hover { background: rgba(245,158,11,0.18); }
+.n8n-trigger-link:active { transform: scale(0.97); }
+
 /* ── Mobile ───────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .screener-root {

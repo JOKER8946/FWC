@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import API from '../../api/axios';
+import MoneyAmount from '../../components/MoneyAmount';
 
 const STATUS_COLOR = {
   paid:      '#10b981',
@@ -61,7 +62,7 @@ export default function Payroll() {
                     </span>
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 800, color: '#10b981', fontFamily: 'Syne, sans-serif' }}>
-                    ₹{p.netPay?.toLocaleString('en-IN')}
+                    <MoneyAmount value={p.netPay} scope="global" key="my-payroll" />
                   </div>
                 </div>
 
@@ -75,7 +76,9 @@ export default function Payroll() {
                   ].filter(([, v]) => v > 0).map(([label, val, color]) => (
                     <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
                       <span style={{ color: '#7070a0' }}>{label}</span>
-                      <span style={{ color, fontWeight: 600 }}>₹{Number(val).toLocaleString('en-IN')}</span>
+                      <span style={{ color, fontWeight: 600 }}>
+                        <MoneyAmount value={val} scope="global" key="my-payroll" />
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -95,7 +98,9 @@ export default function Payroll() {
                     ].filter(([, v]) => v > 0).map(([label, val]) => (
                       <div key={label} style={{ fontSize: 11.5 }}>
                         <span style={{ color: '#44445a' }}>{label}: </span>
-                        <span style={{ color: '#7070a0' }}>₹{val?.toLocaleString('en-IN')}</span>
+                        <span style={{ color: '#7070a0' }}>
+                          <MoneyAmount value={val} scope="global" key="my-payroll" />
+                        </span>
                       </div>
                     ))}
                   </div>

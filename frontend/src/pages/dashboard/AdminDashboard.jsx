@@ -14,6 +14,7 @@ import CandidatePipelinePage from './CandidatePipeline';
 import HiringAnalyticsPage from './HiringAnalytics';
 import HRBot from './HRBot';
 import { LeaveApprovals } from './OtherDashboards';
+import MoneyAmount from '../../components/MoneyAmount';
 import API from '../../api/axios';
 
 const NAV = [
@@ -55,7 +56,7 @@ function AdminOverview() {
   const topStats = [
     { label: 'Total Employees',    value: empStats?.total ?? '—',       sub: `${empStats?.active ?? '—'} active` },
     { label: 'Present Today',      value: todayAtt?.summary?.present ?? '—', sub: 'via attendance log' },
-    { label: 'Payroll This Month', value: payrollSummary ? `₹${payrollSummary.totalNetPay.toLocaleString('en-IN')}` : '—', sub: payrollSummary ? `${payrollSummary.paidCount} paid · ${payrollSummary.pendingCount} pending` : 'No data yet' },
+    { label: 'Payroll This Month', valueNode: <MoneyAmount value={payrollSummary?.totalNetPay} scope="global" key="admin-dashboard" />, sub: payrollSummary ? `${payrollSummary.paidCount} paid · ${payrollSummary.pendingCount} pending` : 'No data yet' },
     { label: 'Flight Risks',       value: highRisk || '—',              sub: 'High + Critical' },
   ];
 
@@ -83,10 +84,10 @@ function AdminOverview() {
 
       {/* Core HRMS stats */}
       <div className="stat-grid">
-        {topStats.map(({ label, value, sub }) => (
+        {topStats.map(({ label, value, valueNode, sub }) => (
           <div className="stat-card" key={label}>
             <div className="stat-label">{label}</div>
-            <div className="stat-value">{value}</div>
+            <div className="stat-value">{valueNode ?? value}</div>
             <div className="stat-sub">{sub}</div>
           </div>
         ))}
@@ -100,10 +101,10 @@ function AdminOverview() {
         </button>
       </div>
       <div className="stat-grid" style={{ marginBottom: 28 }}>
-        {recruitingStats.map(({ label, value, sub }) => (
+        {recruitingStats.map(({ label, value, valueNode, sub }) => (
           <div className="stat-card" key={label}>
             <div className="stat-label">{label}</div>
-            <div className="stat-value">{value}</div>
+            <div className="stat-value">{valueNode ?? value}</div>
             <div className="stat-sub">{sub}</div>
           </div>
         ))}

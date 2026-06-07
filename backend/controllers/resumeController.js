@@ -116,21 +116,30 @@ const uploadAndScreen = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// @desc    Get all resumes for a job, sorted by blindScore desc
-// @route   GET /api/resumes?jobId=xxx
+// @desc    Get all resumes (optionally filtered by jobId and/or status),
+//          sorted by blindScore desc. Used by both the per-job Resume Screener
+//          AND the global Candidate Pipeline / Hiring Analytics views.
+// @route   GET /api/resumes?jobId=xxx&status=yyy
 // @access  HR Recruiter, Admin
+//
+// When `jobId` is omitted, returns *every* resume across every job — the
+// Pipeline and Analytics pages need a global view. We populate `jobId.title`
+// so the frontend can render the Job column without a second round-trip, and
+// we keep `candidateInfo` in the payload; the frontend is responsible for
+// hiding PII for not-yet-shortlisted rows (it already does — see
+// `isIdentityVisible` in CandidatePipeline.jsx). We do still strip `rawText`
+// since it's bulky and never needed by listing views.
 // ─────────────────────────────────────────────────────────────────────────────
 const getResumes = async (req, res) => {
   try {
     const { jobId, status } = req.query;
-    if (!jobId) return res.status(400).json({ success: false, message: 'jobId query param required.' });
-
-    const query = { jobId };
+    const query = {};
+    if (jobId)  query.jobId  = jobId;
     if (status) query.status = status;
 
-    // candidateInfo excluded by default — recruiter sees blind scores only
     const resumes = await Resume.find(query)
-      .select('-candidateInfo -rawText')
+      .select('-rawText')
+      .populate('jobId', 'title department')
       .sort({ blindScore: -1 })
       .lean();
 

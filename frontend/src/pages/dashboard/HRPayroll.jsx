@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import API from '../../api/axios';
+import MoneyAmount from '../../components/MoneyAmount';
+import useMoneyVisibility from '../../hooks/useMoneyVisibility';
 
 const STATUS_COLOR = {
   paid:      '#10b981',
@@ -116,13 +118,16 @@ function AddPayslipModal({ employees, onClose, onCreated }) {
         {basic > 0 && (
           <div style={{ marginTop: 16, padding: 14, background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: '#9090b0', marginBottom: 5 }}>
-              <span>Gross Pay</span><span>₹{gross.toLocaleString('en-IN')}</span>
+              <span>Gross Pay</span>
+              <span><MoneyAmount value={gross} scope="global" key="hr-payroll" /></span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: '#f87171', marginBottom: 5 }}>
-              <span>Total Deductions</span><span>₹{(pf + tax).toLocaleString('en-IN')}</span>
+              <span>Total Deductions</span>
+              <span><MoneyAmount value={pf + tax} scope="global" key="hr-payroll" /></span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, color: '#10b981' }}>
-              <span>Net Pay</span><span>₹{net.toLocaleString('en-IN')}</span>
+              <span>Net Pay</span>
+              <span><MoneyAmount value={net} scope="global" key="hr-payroll" /></span>
             </div>
           </div>
         )}
@@ -149,6 +154,10 @@ export default function HRPayroll() {
   const [empFilter,    setEmpFilter]    = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showAdd,      setShowAdd]      = useState(false);
+
+  // Coordinate per-row eye toggles (clicking the row's eye reveals that row's
+  // Basic + Net Pay together) and the per-page master toggle in the header.
+  const { toggleRow, revealAll, hideAll } = useMoneyVisibility(false);
 
   const { data: payrollData, isLoading } = useQuery({
     queryKey: ['hr-payroll', monthFilter, empFilter, statusFilter],
@@ -193,14 +202,19 @@ export default function HRPayroll() {
       {/* Stats */}
       <div className="stat-grid" style={{ marginBottom: 20 }}>
         {[
-          { label: 'Total Net Pay',  value: `₹${totalNet.toLocaleString('en-IN')}`, sub: `${payslips.length} payslip${payslips.length !== 1 ? 's' : ''}` },
-          { label: 'Pending',        value: pendingCount,  sub: 'Awaiting processing' },
-          { label: 'Paid',           value: paidCount,     sub: 'Disbursed' },
-          { label: 'Employees',      value: uniqueEmps,    sub: 'In current view' },
-        ].map(({ label, value, sub }) => (
+          {
+            label: 'Total Net Pay',
+            // Render a MoneyAmount instead of a plain string for the money card
+            valueNode: <MoneyAmount value={totalNet} scope="global" key="hr-payroll" />,
+            sub: `${payslips.length} payslip${payslips.length !== 1 ? 's' : ''}`,
+          },
+          { label: 'Pending',  value: pendingCount, sub: 'Awaiting processing' },
+          { label: 'Paid',     value: paidCount,    sub: 'Disbursed' },
+          { label: 'Employees',value: uniqueEmps,   sub: 'In current view' },
+        ].map(({ label, value, valueNode, sub }) => (
           <div className="stat-card" key={label}>
             <div className="stat-label">{label}</div>
-            <div className="stat-value">{value}</div>
+            <div className="stat-value">{valueNode ?? value}</div>
             <div className="stat-sub">{sub}</div>
           </div>
         ))}
@@ -235,6 +249,39 @@ export default function HRPayroll() {
           </button>
         )}
         <div style={{ flex: 1 }} />
+
+        {/* Master show/hide all amounts toggle. Hides every Basic + Net Pay
+            value in the table below. */}
+        <button
+          onClick={() => {
+            // Toggling global scope AND per-row state together keeps both
+            // sets of money amounts in sync — the stat card uses global,
+            // the table rows use row scope.
+            const willReveal = !document.documentElement.dataset.moneyShown;
+            document.documentElement.dataset.moneyShown = willReveal ? '1' : '';
+            if (willReveal) revealAll(payslips.map(p => p._id));
+            else            hideAll(payslips.map(p => p._id));
+          }}
+          title="Toggle visibility of all money amounts on this page"
+          style={{
+            padding: '7px 12px',
+            background: 'rgba(99,102,241,0.22)',
+            border: '1.5px solid rgba(99,102,241,0.55)',
+            borderRadius: 8, color: '#c7d2fe',
+            fontSize: 12, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          <svg viewBox="0 0 24 24" width={14} height={14}
+            style={{ stroke: 'currentColor', fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}
+            aria-hidden="true">
+            <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          Show / hide all
+        </button>
+
         <button
           onClick={() => setShowAdd(true)}
           style={{ padding: '8px 16px', background: '#6366f1', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}
@@ -273,19 +320,33 @@ export default function HRPayroll() {
                 borderRadius: 10,
               }}>
                 <div>
-                  <div style={{ fontSize: 13.5, fontWeight: 500, color: '#e0e0f0' }}>
-                    {emp?.firstName} {emp?.lastName}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      type="button"
+                      className="money-amount-toggle"
+                      onClick={() => toggleRow(p._id)}
+                      aria-label="Toggle money amounts for this row"
+                      title="Toggle money amounts for this row"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+                    <span style={{ fontSize: 13.5, fontWeight: 500, color: '#e0e0f0' }}>
+                      {emp?.firstName} {emp?.lastName}
+                    </span>
                   </div>
-                  <div style={{ fontSize: 11, color: '#555570', marginTop: 2, textTransform: 'capitalize' }}>
+                  <div style={{ fontSize: 11, color: '#555570', marginTop: 4, textTransform: 'capitalize', paddingLeft: 26 }}>
                     {emp?.designation || '—'} · {emp?.department || '—'}
                   </div>
                 </div>
                 <div style={{ fontSize: 13, color: '#9090b0' }}>{p.month}</div>
                 <div style={{ fontSize: 12.5, color: '#7070a0' }}>
-                  ₹{p.basicSalary?.toLocaleString('en-IN')}
+                  <MoneyAmount value={p.basicSalary} scope="row" rowId={p._id} />
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#10b981' }}>
-                  ₹{p.netPay?.toLocaleString('en-IN')}
+                  <MoneyAmount value={p.netPay} scope="row" rowId={p._id} />
                 </div>
                 <div>
                   <span style={{ fontSize: 11, fontWeight: 600, color: sc, padding: '3px 9px', background: `${sc}18`, borderRadius: 99, textTransform: 'capitalize' }}>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import API from '../../api/axios';
+import AttendanceCalendar from '../../components/AttendanceCalendar';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -140,95 +141,8 @@ function CheckInCard({ onRefresh }) {
   );
 }
 
-// ── 30-day calendar grid ──────────────────────────────────────────────────────
-function AttendanceCalendar({ records }) {
-  const [selected, setSelected] = useState(null);
-
-  // Build a map: date-string → record
-  const map = {};
-  records.forEach(r => {
-    const key = new Date(r.date).toDateString();
-    map[key] = r;
-  });
-
-  // Last 30 days
-  const days = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (29 - i));
-    d.setHours(0, 0, 0, 0);
-    return d;
-  });
-
-  const counts = { present: 0, late: 0, absent: 0, wfh: 0 };
-  days.forEach(d => {
-    const rec = map[d.toDateString()];
-    const status = rec?.status || (d <= new Date() ? 'absent' : null);
-    if (status && counts[status] !== undefined) counts[status]++;
-  });
-
-  return (
-    <>
-      {/* Summary chips */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-        {[['Present', counts.present, '#10b981'], ['Late', counts.late, '#f59e0b'], ['Absent', counts.absent, '#ef4444'], ['WFH', counts.wfh, '#6366f1']].map(([l, v, c]) => (
-          <div key={l} style={{ background: `${c}12`, border: `1px solid ${c}30`, borderRadius: 10, padding: '8px 14px', textAlign: 'center', minWidth: 68 }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: c }}>{v}</div>
-            <div style={{ fontSize: 10, color: c, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{l}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(52px, 1fr))', gap: 6 }}>
-        {days.map((d, i) => {
-          const rec    = map[d.toDateString()];
-          const isPast = d <= new Date();
-          const status = rec?.status || (isPast ? 'absent' : null);
-          const color  = STATUS_COLOR[status] || '#22223a';
-          const isSel  = selected && selected.toDateString() === d.toDateString();
-
-          return (
-            <div key={i}
-              onClick={() => setSelected(isSel ? null : d)}
-              style={{ padding: '8px 4px', borderRadius: 8, cursor: 'pointer', textAlign: 'center',
-                background: isSel ? `${color}30` : `${color}12`,
-                border: `1px solid ${isSel ? color : color + '30'}`,
-                transition: 'all 0.15s' }}>
-              <div style={{ fontSize: 10, color: '#555570' }}>
-                {d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-              </div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: status ? color : '#22223a', marginTop: 3, textTransform: 'capitalize' }}>
-                {status ? status.slice(0, 3) : '·'}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Detail popup */}
-      {selected && (() => {
-        const rec = map[selected.toDateString()];
-        return (
-          <div style={{ marginTop: 14, padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', marginBottom: 8 }}>
-              {fmtDate(selected)}
-            </div>
-            {rec ? (
-              <div style={{ display: 'flex', gap: 20, fontSize: 12.5, flexWrap: 'wrap' }}>
-                <span><span style={{ color: '#44445a' }}>Status </span><span style={{ color: STATUS_COLOR[rec.status], fontWeight: 700, textTransform: 'capitalize' }}>{rec.status}</span></span>
-                <span><span style={{ color: '#44445a' }}>In </span><span style={{ color: '#10b981', fontWeight: 600 }}>{fmtTime(rec.checkIn)}</span></span>
-                <span><span style={{ color: '#44445a' }}>Out </span><span style={{ color: '#a5b4fc', fontWeight: 600 }}>{fmtTime(rec.checkOut)}</span></span>
-                <span><span style={{ color: '#44445a' }}>Hours </span><span style={{ color: '#e2e8f0', fontWeight: 600 }}>{fmtHours(rec.hoursWorked)}</span></span>
-              </div>
-            ) : (
-              <span style={{ fontSize: 12.5, color: '#ef4444' }}>No check-in recorded</span>
-            )}
-          </div>
-        );
-      })()}
-    </>
-  );
-}
+// ── Calendar moved to <AttendanceCalendar /> in components/AttendanceCalendar.jsx
+// (full month grid with prev/next, year jump, holiday + event markers)
 
 // ── Manager / Admin: team today panel ────────────────────────────────────────
 function TeamTodayPanel() {
@@ -411,9 +325,9 @@ export default function Attendance() {
       {/* Check-in / Check-out card (all roles) */}
       <CheckInCard onRefresh={() => setRefresh(r => r + 1)} />
 
-      {/* Personal calendar */}
+      {/* Personal calendar — full month grid with holiday + event markers */}
       <div style={{ fontSize: 12, fontWeight: 700, color: '#44445a', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
-        My Last 30 Days
+        My Attendance Calendar
       </div>
       <AttendanceCalendar records={records} />
 
